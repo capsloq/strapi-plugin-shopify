@@ -6,6 +6,7 @@ const settingsRoutes = require('./settings');
 const shopRoutes = require('./shop');
 const shopifyRoutes = require('./shopify');
 
+
 module.exports = {
   admin: {
     type: 'admin',
