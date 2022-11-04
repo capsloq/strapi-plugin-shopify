@@ -33,11 +33,29 @@ const authenticate = async (ctx) => {
   try {
     // load current session
     const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+    const { query } = ctx;
+    
+
+
+    // ************************** Workaround Zomh: Keine Session und kein Shop (Session wurde aus DB gelöscht)
+    if (!session && !query.shop) {
+      strapi.log.info(`Shopify session not found redirecting to auth`);
+
+      // Get shop query out of referer url using URLSearchParams
+      const referer = ctx.request.header.referer
+      const refererURL = new URL(referer);
+      const refererSearchParams = new URLSearchParams(refererURL.search);
+      const shopFromRefererURL = refererSearchParams.get('shop');
+      if (shopFromRefererURL)
+        return handleRedirectAuth(ctx, shopFromRefererURL, 'Session not in DB but shop is installed');
+    }
+    //*************************** ENDE WORKAROUND *********************************************************/
+
+
     // if session is undefined the request was not authenticated
     if (!session) return { authenticated: false };
 
     // check if request uses another shop in query string
-    const { query } = ctx;
     if (query.shop && query.shop !== session.shop) {
       await Shopify.Utils.deleteCurrentSession(ctx.req, ctx.res, true);
       return handleRedirectAuth(ctx, query.shop, 'Different shop in query string');
